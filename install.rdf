@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<RDF:RDF xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+	<RDF:Description RDF:about="urn:mozilla:install-manifest">
+		<em:id>safeguard@charmander.me</em:id>
+		<em:version>0.1.0</em:version>
+		<em:type>2</em:type>
+		<em:targetApplication>
+			<RDF:Description>
+				<em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+				<em:minVersion>30.0</em:minVersion>
+				<em:maxVersion>33.0</em:maxVersion>
+			</RDF:Description>
+		</em:targetApplication>
+		<em:name>Safeguard</em:name>
+		<em:bootstrap>true</em:bootstrap>
+		<em:description>Redirects plain HTTP to HTTPS.</em:description>
+		<em:creator>Charmander</em:creator>
+		<em:homepageURL>https://charmander.me/safeguard/</em:homepageURL>
+	</RDF:Description>
+</RDF:RDF>
