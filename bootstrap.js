@@ -44,7 +44,7 @@ function getDOMWindow(windowComponent) {
 }
 
 function* windows(type) {
-	const windowEnumerator = windowMediator.getEnumerator(null);
+	const windowEnumerator = windowMediator.getEnumerator('navigator:browser');
 
 	while (windowEnumerator.hasMoreElements()) {
 		const windowComponent = windowEnumerator.getNext();
