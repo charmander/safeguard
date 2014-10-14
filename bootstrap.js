@@ -4,6 +4,16 @@ Components.utils.import('resource://gre/modules/Services.jsm');
 
 const windowMediator = Components.classes['@mozilla.org/appshell/window-mediator;1'].getService(Components.interfaces.nsIWindowMediator);
 
+const preferences = Components.classes['@mozilla.org/preferences-service;1']
+	.getService(Components.interfaces.nsIPrefService)
+	.getBranch('extensions.safeguard.');
+
+let whitelist = [];
+
+function reloadWhitelist() {
+	whitelist = preferences.getCharPref('whitelist').split(/\s+/);
+}
+
 function addButton(window) {
 	window.addEventListener('load', function loaded() {
 		window.removeEventListener('load', loaded, false);
@@ -23,6 +33,8 @@ function addButton(window) {
 			button.setAttribute('id', 'safeguard-button');
 			button.setAttribute('class', 'toolbarbutton-1 chromeclass-toolbar-additional');
 			button.setAttribute('label', 'Safeguard');
+
+			button.addEventListener('click', reloadWhitelist, false);
 
 			toolbox.palette.appendChild(button);
 		}
@@ -67,7 +79,7 @@ const observer = {
 		if (topic === 'http-on-modify-request') {
 			const request = subject.QueryInterface(Components.interfaces.nsIHttpChannel);
 
-			if (request.URI.scheme === 'http') {
+			if (request.URI.scheme === 'http' && whitelist.indexOf(request.URI.host) === -1) {
 				request.URI.scheme = 'https';
 				request.redirectTo(request.URI);
 			}
@@ -76,6 +88,8 @@ const observer = {
 };
 
 function startup(data, reason) {
+	reloadWhitelist();
+
 	Services.obs.addObserver(observer, 'http-on-modify-request', false);
 
 	windowMediator.addListener(windowListener);
@@ -96,6 +110,10 @@ function shutdown(data, reason) {
 }
 
 function install(data, reason) {
+	Components.classes['@mozilla.org/preferences-service;1']
+		.getService(Components.interfaces.nsIPrefService)
+		.getDefaultBranch('extensions.safeguard.')
+		.setCharPref('whitelist', '');
 }
 
 function uninstall(data, reason) {
