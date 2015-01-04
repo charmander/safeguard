@@ -1,0 +1,28 @@
+{
+	"camelcase": true,
+	"curly": true,
+	"eqeqeq": true,
+	"forin": true,
+	"immed": true,
+	"latedef": true,
+	"newcap": true,
+	"noarg": true,
+	"noempty": true,
+	"nonew": true,
+	"quotmark": "single",
+	"undef": true,
+	"unused": true,
+	"strict": true,
+	"maxparams": 3,
+	"maxcomplexity": 5,
+
+	"globals": {
+		"Components": true,
+		"Services": true
+	},
+
+	"esnext": true,
+	"globalstrict": true,
+
+	"predef": ["-Promise"]
+}

@@ -1,3 +1,5 @@
+/* exported startup, shutdown, install, uninstall */
+
 'use strict';
 
 Components.utils.import('resource://gre/modules/Services.jsm');
@@ -55,7 +57,7 @@ function getDOMWindow(windowComponent) {
 	return windowComponent.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowInternal || Components.interfaces.nsIDOMWindow);
 }
 
-function* windows(type) {
+function* windows() {
 	const windowEnumerator = windowMediator.getEnumerator('navigator:browser');
 
 	while (windowEnumerator.hasMoreElements()) {
@@ -94,7 +96,7 @@ function startup(data, reason) {
 
 	windowMediator.addListener(windowListener);
 
-	for (let domWindow of windows(null)) {
+	for (let domWindow of windows()) {
 		addButton(domWindow);
 	}
 }
@@ -104,7 +106,7 @@ function shutdown(data, reason) {
 
 	windowMediator.removeListener(windowListener);
 
-	for (let domWindow of windows(null)) {
+	for (let domWindow of windows()) {
 		removeButton(domWindow);
 	}
 }
