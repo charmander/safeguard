@@ -4,11 +4,7 @@
 
 Components.utils.import('resource://gre/modules/Services.jsm');
 
-const windowMediator = Components.classes['@mozilla.org/appshell/window-mediator;1'].getService(Components.interfaces.nsIWindowMediator);
-
-const preferences = Components.classes['@mozilla.org/preferences-service;1']
-	.getService(Components.interfaces.nsIPrefService)
-	.getBranch('extensions.safeguard.');
+const preferences = Services.prefs.getBranch('extensions.safeguard.');
 
 let whitelist = [];
 
@@ -17,32 +13,28 @@ function reloadWhitelist() {
 }
 
 function addButton(window) {
-	window.addEventListener('load', function loaded() {
-		window.removeEventListener('load', loaded, false);
+	const toolbox = window.document.getElementById('navigator-toolbox');
 
-		const toolbox = window.document.getElementById('navigator-toolbox');
+	if (!toolbox) {
+		return;
+	}
 
-		if (!toolbox) {
-			return;
-		}
+	const navigationBar = window.document.getElementById('nav-bar');
 
-		const navigationBar = window.document.getElementById('nav-bar');
+	let button = window.document.getElementById('safeguard-button');
 
-		let button = window.document.getElementById('safeguard-button');
+	if (!button) {
+		button = window.document.createElement('toolbarbutton');
+		button.setAttribute('id', 'safeguard-button');
+		button.setAttribute('class', 'toolbarbutton-1 chromeclass-toolbar-additional');
+		button.setAttribute('label', 'Safeguard');
 
-		if (!button) {
-			button = window.document.createElement('toolbarbutton');
-			button.setAttribute('id', 'safeguard-button');
-			button.setAttribute('class', 'toolbarbutton-1 chromeclass-toolbar-additional');
-			button.setAttribute('label', 'Safeguard');
+		button.addEventListener('command', reloadWhitelist, false);
 
-			button.addEventListener('click', reloadWhitelist, false);
+		toolbox.palette.appendChild(button);
+	}
 
-			toolbox.palette.appendChild(button);
-		}
-
-		navigationBar.insertItem('safeguard-button');
-	}, false);
+	navigationBar.insertItem('safeguard-button');
 }
 
 function removeButton(window) {
@@ -53,31 +45,37 @@ function removeButton(window) {
 	}
 }
 
-function getDOMWindow(windowComponent) {
-	return windowComponent.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowInternal || Components.interfaces.nsIDOMWindow);
+function whenLoaded(window, callback) {
+	window.addEventListener('load', function loaded() {
+		window.removeEventListener('load', loaded, false);
+		callback(window);
+	}, false);
 }
 
-function* windows() {
-	const windowEnumerator = windowMediator.getEnumerator('navigator:browser');
+function eachWindow(callback) {
+	const windowEnumerator = Services.wm.getEnumerator('navigator:browser');
 
 	while (windowEnumerator.hasMoreElements()) {
-		const windowComponent = windowEnumerator.getNext();
-		const domWindow = getDOMWindow(windowComponent);
-		yield domWindow;
+		const domWindow = windowEnumerator.getNext();
+
+		if (domWindow.document.readyState === 'complete') {
+			callback(domWindow);
+		} else {
+			whenLoaded(domWindow, callback);
+		}
 	}
 }
 
-const windowListener = {
-	onOpenWindow: function (windowComponent) {
-		const domWindow = getDOMWindow(windowComponent);
-		addButton(domWindow);
-	},
-	onCloseWindow: function () {},
-	onWindowTitleChange: function () {}
+const windowObserver = {
+	observe: function observe(subject, topic) {
+		if (topic === 'domwindowopened') {
+			whenLoaded(subject, addButton);
+		}
+	}
 };
 
-const observer = {
-	observe: function observe(subject, topic, data) {
+const requestObserver = {
+	observe: function observe(subject, topic) {
 		if (topic === 'http-on-modify-request') {
 			const request = subject.QueryInterface(Components.interfaces.nsIHttpChannel);
 
@@ -89,35 +87,28 @@ const observer = {
 	}
 };
 
-function startup(data, reason) {
-	Components.classes['@mozilla.org/preferences-service;1']
-		.getService(Components.interfaces.nsIPrefService)
+function startup() {
+	Services.prefs
 		.getDefaultBranch('extensions.safeguard.')
 		.setCharPref('whitelist', '');
 
 	reloadWhitelist();
 
-	Services.obs.addObserver(observer, 'http-on-modify-request', false);
+	Services.obs.addObserver(requestObserver, 'http-on-modify-request', false);
 
-	windowMediator.addListener(windowListener);
-
-	for (let domWindow of windows()) {
-		addButton(domWindow);
-	}
+	Services.ww.registerNotification(windowObserver);
+	eachWindow(addButton);
 }
 
-function shutdown(data, reason) {
-	Services.obs.removeObserver(observer, 'http-on-modify-request');
+function shutdown() {
+	Services.obs.removeObserver(requestObserver, 'http-on-modify-request');
 
-	windowMediator.removeListener(windowListener);
-
-	for (let domWindow of windows()) {
-		removeButton(domWindow);
-	}
+	Services.ww.unregisterNotification(windowObserver);
+	eachWindow(removeButton);
 }
 
-function install(data, reason) {
+function install() {
 }
 
-function uninstall(data, reason) {
+function uninstall() {
 }
