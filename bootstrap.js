@@ -90,6 +90,11 @@ const observer = {
 };
 
 function startup(data, reason) {
+	Components.classes['@mozilla.org/preferences-service;1']
+		.getService(Components.interfaces.nsIPrefService)
+		.getDefaultBranch('extensions.safeguard.')
+		.setCharPref('whitelist', '');
+
 	reloadWhitelist();
 
 	Services.obs.addObserver(observer, 'http-on-modify-request', false);
@@ -112,10 +117,6 @@ function shutdown(data, reason) {
 }
 
 function install(data, reason) {
-	Components.classes['@mozilla.org/preferences-service;1']
-		.getService(Components.interfaces.nsIPrefService)
-		.getDefaultBranch('extensions.safeguard.')
-		.setCharPref('whitelist', '');
 }
 
 function uninstall(data, reason) {
