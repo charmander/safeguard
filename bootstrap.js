@@ -21,20 +21,25 @@ function addButton(window) {
 
 	const navigationBar = window.document.getElementById('nav-bar');
 
-	let button = window.document.getElementById('safeguard-button');
+	let button = window.document.createElement('toolbarbutton');
+	button.setAttribute('id', 'safeguard-button');
+	button.setAttribute('class', 'toolbarbutton-1 chromeclass-toolbar-additional');
+	button.setAttribute('label', 'Safeguard');
 
-	if (!button) {
-		button = window.document.createElement('toolbarbutton');
-		button.setAttribute('id', 'safeguard-button');
-		button.setAttribute('class', 'toolbarbutton-1 chromeclass-toolbar-additional');
-		button.setAttribute('label', 'Safeguard');
+	button.addEventListener('command', reloadWhitelist, false);
 
-		button.addEventListener('command', reloadWhitelist, false);
+	toolbox.palette.appendChild(button);
 
-		toolbox.palette.appendChild(button);
+	var currentSet = navigationBar.getAttribute('currentset').split(',');
+	var i = currentSet.indexOf('safeguard-button');
+	var next = null;
+
+	if (i !== -1 && i !== currentSet.length - 1) {
+		next = window.document.getElementById(currentSet[i + 1]);
 	}
 
-	navigationBar.insertItem('safeguard-button');
+	navigationBar.insertItem('safeguard-button', next);
+	window.document.persist('safeguard-button', 'currentset');
 }
 
 function removeButton(window) {
