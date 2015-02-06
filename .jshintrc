@@ -22,7 +22,5 @@
 	},
 
 	"esnext": true,
-	"globalstrict": true,
-
-	"predef": ["-Promise"]
+	"globalstrict": true
 }
