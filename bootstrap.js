@@ -12,6 +12,17 @@ function reloadWhitelist() {
 	whitelist = preferences.getCharPref('whitelist').split(/\s+/);
 }
 
+function toggleDomain(domain) {
+	if (whitelist.indexOf(domain) === -1) {
+		whitelist.push(domain);
+		preferences.setCharPref('whitelist', whitelist.join(' '));
+	} else {
+		preferences.setCharPref('whitelist', whitelist.filter(function (existingDomain) {
+			return existingDomain !== domain;
+		}).join(' '));
+	}
+}
+
 function addButton(window) {
 	const toolbox = window.document.getElementById('navigator-toolbox');
 
@@ -26,13 +37,23 @@ function addButton(window) {
 	button.setAttribute('class', 'toolbarbutton-1 chromeclass-toolbar-additional');
 	button.setAttribute('label', 'Safeguard');
 
-	button.addEventListener('command', reloadWhitelist, false);
+	button.addEventListener('command', function toggleCurrentDomain() {
+		const uri = window.getBrowser().selectedBrowser.registeredOpenURI;
+
+		if (!uri) {
+			return;
+		}
+
+		if (uri.schemeIs('http') || uri.schemeIs('https')) {
+			toggleDomain(uri.host);
+		}
+	}, false);
 
 	toolbox.palette.appendChild(button);
 
-	var currentSet = navigationBar.getAttribute('currentset').split(',');
-	var i = currentSet.indexOf('safeguard-button');
-	var next = null;
+	const currentSet = navigationBar.getAttribute('currentset').split(',');
+	const i = currentSet.indexOf('safeguard-button');
+	let next = null;
 
 	if (i !== -1 && i !== currentSet.length - 1) {
 		next = window.document.getElementById(currentSet[i + 1]);
@@ -99,6 +120,7 @@ function startup() {
 
 	reloadWhitelist();
 
+	preferences.addObserver('whitelist', reloadWhitelist, false);
 	Services.obs.addObserver(requestObserver, 'http-on-modify-request', false);
 
 	Services.ww.registerNotification(windowObserver);
@@ -107,6 +129,7 @@ function startup() {
 
 function shutdown() {
 	Services.obs.removeObserver(requestObserver, 'http-on-modify-request');
+	preferences.removeObserver('whitelist', reloadWhitelist);
 
 	Services.ww.unregisterNotification(windowObserver);
 	eachWindow(removeButton);
