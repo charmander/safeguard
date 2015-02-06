@@ -24,20 +24,7 @@ function toggleDomain(domain) {
 }
 
 function addButton(window) {
-	const toolbox = window.document.getElementById('navigator-toolbox');
-
-	if (!toolbox) {
-		return;
-	}
-
-	const navigationBar = window.document.getElementById('nav-bar');
-
-	let button = window.document.createElement('toolbarbutton');
-	button.setAttribute('id', 'safeguard-button');
-	button.setAttribute('class', 'toolbarbutton-1 chromeclass-toolbar-additional');
-	button.setAttribute('label', 'Safeguard');
-
-	button.addEventListener('command', function toggleCurrentDomain() {
+	function toggleCurrentDomain() {
 		const uri = window.getBrowser().selectedBrowser.registeredOpenURI;
 
 		if (!uri) {
@@ -47,28 +34,19 @@ function addButton(window) {
 		if (uri.schemeIs('http') || uri.schemeIs('https')) {
 			toggleDomain(uri.host);
 		}
-	}, false);
-
-	toolbox.palette.appendChild(button);
-
-	const currentSet = navigationBar.getAttribute('currentset').split(',');
-	const i = currentSet.indexOf('safeguard-button');
-	let next = null;
-
-	if (i !== -1 && i !== currentSet.length - 1) {
-		next = window.document.getElementById(currentSet[i + 1]);
 	}
 
-	navigationBar.insertItem('safeguard-button', next);
-	window.document.persist('safeguard-button', 'currentset');
+	window.CustomizableUI.createWidget({
+		id: 'safeguard-button',
+		type: 'button',
+		tooltiptext: 'Toggle Safeguard whitelist entry for current domain',
+		label: 'Safeguard',
+		onCommand: toggleCurrentDomain,
+	});
 }
 
 function removeButton(window) {
-	const button = window.document.getElementById('safeguard-button');
-
-	if (button) {
-		button.parentNode.removeChild(button);
-	}
+	window.CustomizableUI.destroyWidget('safeguard-button');
 }
 
 function whenLoaded(window, callback) {
