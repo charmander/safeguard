@@ -24,6 +24,10 @@ function toggleDomain(domain) {
 }
 
 function addButton(window) {
+	if (!window.CustomizableUI) {
+		return;
+	}
+
 	function toggleCurrentDomain() {
 		const uri = window.getBrowser().selectedBrowser.registeredOpenURI;
 
