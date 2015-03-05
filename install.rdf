@@ -3,7 +3,7 @@
 <RDF:RDF xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 	<RDF:Description RDF:about="urn:mozilla:install-manifest">
 		<em:id>safeguard@charmander.me</em:id>
-		<em:version>0.3.0</em:version>
+		<em:version>0.3.1</em:version>
 		<em:type>2</em:type>
 		<em:targetApplication>
 			<RDF:Description>
