@@ -2,55 +2,181 @@
 
 'use strict';
 
-Components.utils.import('resource://gre/modules/Services.jsm');
+function import_(uri) {
+	const scope = {};
+	Components.utils.import(uri, scope);
+	return scope;
+}
+
+const { Services } = import_('resource://gre/modules/Services.jsm');
+const XUL_NS = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
 
 const preferences = Services.prefs.getBranch('extensions.safeguard.');
+const preferencesDefault = Services.prefs.getDefaultBranch('extensions.safeguard.');
 
-let whitelist = [];
+const recentHosts = [];
 
-function reloadWhitelist() {
-	whitelist = preferences.getCharPref('whitelist').split(/\s+/);
-}
+function addRecentHost(host) {
+	if (recentHosts.indexOf(host) === -1) {
+		recentHosts.unshift(host);
 
-function toggleDomain(domain) {
-	if (whitelist.indexOf(domain) === -1) {
-		whitelist.push(domain);
-		preferences.setCharPref('whitelist', whitelist.join(' '));
-	} else {
-		preferences.setCharPref('whitelist', whitelist.filter(function (existingDomain) {
-			return existingDomain !== domain;
-		}).join(' '));
+		if (recentHosts.length > 20) {
+			recentHosts.pop();
+		}
 	}
 }
+
+function empty(node) {
+	let child;
+
+	while ((child = node.firstChild)) {
+		node.removeChild(child);
+	}
+}
+
+function preferenceSet(name) {
+	let set = new Set();
+	let modifying = false;
+
+	function load() {
+		if (!modifying) {
+			set = new Set(preferences.getCharPref(name).match(/\S+/));
+		}
+	}
+
+	function save() {
+		modifying = true;
+		preferences.setCharPref(name, Array.from(set).join(' '));
+		modifying = false;
+	}
+
+	return {
+		add: function add(item) {
+			set.add(item);
+			save();
+		},
+		delete: function delete_(item) {
+			set.delete(item);
+			save();
+		},
+		has: function has(item) {
+			return set.has(item);
+		},
+		load: load,
+		startup: function startup() {
+			preferencesDefault.setCharPref(name, '');
+			preferences.addObserver(name, load, false);
+			load();
+		},
+		shutdown: function shutdown() {
+			preferences.removeObserver(name, load);
+		}
+	};
+}
+
+const allow = preferenceSet('allow');
+const redirect = preferenceSet('redirect');
 
 function addButton(window) {
 	if (!window.CustomizableUI) {
 		return;
 	}
 
-	function toggleCurrentDomain() {
-		const uri = window.getBrowser().selectedBrowser.registeredOpenURI;
+	const document = window.document;
 
-		if (!uri) {
-			return;
+	const panelView = document.createElementNS(XUL_NS, 'panelview');
+	panelView.setAttribute('id', 'safeguard-manage');
+	panelView.setAttribute('flex', '1');
+	panelView.classList.add('PanelUI-subView');
+
+	const panelHeader = document.createElementNS(XUL_NS, 'label');
+	panelHeader.classList.add('panel-subview-header');
+	panelHeader.setAttribute('value', 'Manage whitelist');
+
+	const panelContent = document.createElementNS(XUL_NS, 'vbox');
+	panelContent.classList.add('panel-subview-body');
+
+	const panelParent = document.getElementById('PanelUI-multiView');
+
+	panelView.appendChild(panelHeader);
+	panelView.appendChild(panelContent);
+	panelParent.appendChild(panelView);
+
+	function updateActions() {
+		function addToggle(host) {
+			const group = document.createElementNS(XUL_NS, 'radiogroup');
+			group.setAttribute('orient', 'horizontal');
+
+			const radioBlock = document.createElementNS(XUL_NS, 'radio');
+			radioBlock.setAttribute('label', 'block');
+			radioBlock.value = 'block';
+
+			const radioRedirect = document.createElementNS(XUL_NS, 'radio');
+			radioRedirect.setAttribute('label', 'redirect');
+			radioRedirect.value = 'redirect';
+
+			const radioAllow = document.createElementNS(XUL_NS, 'radio');
+			radioAllow.setAttribute('label', 'allow');
+			radioAllow.value = 'allow';
+
+			if (allow.has(host)) {
+				radioAllow.setAttribute('selected', 'true');
+			} else if (redirect.has(host)) {
+				radioRedirect.setAttribute('selected', 'true');
+			} else {
+				radioBlock.setAttribute('selected', 'true');
+			}
+
+			radioBlock.addEventListener('command', function () {
+				if (radioBlock.selected) {
+					allow.delete(host);
+					redirect.delete(host);
+				}
+			}, false);
+
+			radioRedirect.addEventListener('command', function () {
+				if (radioRedirect.selected) {
+					allow.delete(host);
+					redirect.add(host);
+				}
+			}, false);
+
+			radioAllow.addEventListener('command', function () {
+				if (radioAllow.selected) {
+					allow.add(host);
+					redirect.delete(host);
+				}
+			}, false);
+
+			// ick
+			const padding = document.createElementNS(XUL_NS, 'box');
+			padding.setAttribute('width', '5px');
+
+			group.appendChild(padding);
+			group.appendChild(document.createTextNode(host));
+			group.appendChild(radioBlock);
+			group.appendChild(radioRedirect);
+			group.appendChild(radioAllow);
+			panelContent.appendChild(group);
 		}
 
-		if (uri.schemeIs('http') || uri.schemeIs('https')) {
-			toggleDomain(uri.host);
-		}
+		empty(panelContent);
+		recentHosts.forEach(addToggle);
 	}
 
 	window.CustomizableUI.createWidget({
 		id: 'safeguard-button',
-		type: 'button',
-		tooltiptext: 'Toggle Safeguard whitelist entry for current domain',
+		type: 'view',
+		viewId: 'safeguard-manage',
+		tooltiptext: 'Manage HTTP blocking',
 		label: 'Safeguard',
-		onCommand: toggleCurrentDomain,
+		onViewShowing: updateActions,
 	});
 }
 
 function removeButton(window) {
 	window.CustomizableUI.destroyWidget('safeguard-button');
+	window.document.getElementById('safeguard-manage').remove();
 }
 
 function whenLoaded(window, callback) {
@@ -86,23 +212,29 @@ const requestObserver = {
 	observe: function observe(subject, topic) {
 		if (topic === 'http-on-modify-request') {
 			const request = subject.QueryInterface(Components.interfaces.nsIHttpChannel);
+			const uri = request.URI;
+			const host = uri.host;
 
-			if (request.URI.scheme === 'http' && whitelist.indexOf(request.URI.host) === -1) {
-				request.URI.scheme = 'https';
-				request.redirectTo(request.URI);
+			if (uri.schemeIs('http')) {
+				if (redirect.has(host)) {
+					uri.scheme = 'https';
+					request.redirectTo(uri);
+				} else if (!allow.has(host)) {
+					request.cancel(Components.results.NS_ERROR_ABORT);
+				}
+
+				addRecentHost(host);
+			} else if (uri.schemeIs('https') && (allow.has(host) || redirect.has(host))) {
+				addRecentHost(host);
 			}
 		}
 	}
 };
 
 function startup() {
-	Services.prefs
-		.getDefaultBranch('extensions.safeguard.')
-		.setCharPref('whitelist', '');
+	allow.startup();
+	redirect.startup();
 
-	reloadWhitelist();
-
-	preferences.addObserver('whitelist', reloadWhitelist, false);
 	Services.obs.addObserver(requestObserver, 'http-on-modify-request', false);
 
 	Services.ww.registerNotification(windowObserver);
@@ -111,7 +243,9 @@ function startup() {
 
 function shutdown() {
 	Services.obs.removeObserver(requestObserver, 'http-on-modify-request');
-	preferences.removeObserver('whitelist', reloadWhitelist);
+
+	allow.shutdown();
+	redirect.shutdown();
 
 	Services.ww.unregisterNotification(windowObserver);
 	eachWindow(removeButton);

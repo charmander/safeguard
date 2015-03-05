@@ -17,8 +17,7 @@
 	"maxcomplexity": 5,
 
 	"globals": {
-		"Components": true,
-		"Services": true
+		"Components": true
 	},
 
 	"esnext": true,
