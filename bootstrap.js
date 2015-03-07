@@ -40,7 +40,7 @@ function preferenceSet(name) {
 
 	function load() {
 		if (!modifying) {
-			set = new Set(preferences.getCharPref(name).match(/\S+/) || []);
+			set = new Set(preferences.getCharPref(name).match(/\S+/g) || []);
 		}
 	}
 
