@@ -1,20 +1,15 @@
 {
-	"camelcase": true,
 	"curly": true,
 	"eqeqeq": true,
 	"forin": true,
-	"immed": true,
+	"futurehostile": true,
 	"latedef": true,
-	"newcap": true,
 	"noarg": true,
-	"noempty": true,
+	"nocomma": true,
 	"nonew": true,
-	"quotmark": "single",
+	"strict": true,
 	"undef": true,
 	"unused": true,
-	"strict": true,
-	"maxparams": 3,
-	"maxcomplexity": 5,
 
 	"globals": {
 		"Components": true
