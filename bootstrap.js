@@ -9,6 +9,7 @@ function import_(uri) {
 }
 
 const { Services } = import_('resource://gre/modules/Services.jsm');
+const { CustomizableUI } = import_('resource:///modules/CustomizableUI.jsm');
 const XUL_NS = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
 
 const preferences = Services.prefs.getBranch('extensions.safeguard.');
@@ -17,12 +18,17 @@ const preferencesDefault = Services.prefs.getDefaultBranch('extensions.safeguard
 const recentHosts = [];
 
 function addRecentHost(host) {
-	if (recentHosts.indexOf(host) === -1) {
+	const i = recentHosts.indexOf(host);
+
+	if (i === -1) {
 		recentHosts.unshift(host);
 
 		if (recentHosts.length > 20) {
 			recentHosts.pop();
 		}
+	} else {
+		recentHosts.splice(i, 1);
+		recentHosts.unshift(host);
 	}
 }
 
@@ -77,12 +83,14 @@ function preferenceSet(name) {
 const allow = preferenceSet('allow');
 const redirect = preferenceSet('redirect');
 
-function addButton(window) {
-	if (!window.CustomizableUI) {
+function addUI(window) {
+	const document = window.document;
+
+	const panelParent = document.getElementById('PanelUI-multiView');
+
+	if (!panelParent) {
 		return;
 	}
-
-	const document = window.document;
 
 	const panelView = document.createElementNS(XUL_NS, 'panelview');
 	panelView.setAttribute('id', 'safeguard-manage');
@@ -96,92 +104,18 @@ function addButton(window) {
 	const panelContent = document.createElementNS(XUL_NS, 'vbox');
 	panelContent.classList.add('panel-subview-body');
 
-	const panelParent = document.getElementById('PanelUI-multiView');
-
 	panelView.appendChild(panelHeader);
 	panelView.appendChild(panelContent);
 	panelParent.appendChild(panelView);
-
-	function updateActions() {
-		function addToggle(host) {
-			const group = document.createElementNS(XUL_NS, 'radiogroup');
-			group.setAttribute('orient', 'horizontal');
-
-			const radioBlock = document.createElementNS(XUL_NS, 'radio');
-			radioBlock.setAttribute('label', 'block');
-			radioBlock.value = 'block';
-
-			const radioRedirect = document.createElementNS(XUL_NS, 'radio');
-			radioRedirect.setAttribute('label', 'redirect');
-			radioRedirect.value = 'redirect';
-
-			const radioAllow = document.createElementNS(XUL_NS, 'radio');
-			radioAllow.setAttribute('label', 'allow');
-			radioAllow.value = 'allow';
-
-			if (allow.has(host)) {
-				radioAllow.setAttribute('selected', 'true');
-			} else if (redirect.has(host)) {
-				radioRedirect.setAttribute('selected', 'true');
-			} else {
-				radioBlock.setAttribute('selected', 'true');
-			}
-
-			radioBlock.addEventListener('command', function () {
-				if (radioBlock.selected) {
-					allow.delete(host);
-					redirect.delete(host);
-				}
-			}, false);
-
-			radioRedirect.addEventListener('command', function () {
-				if (radioRedirect.selected) {
-					allow.delete(host);
-					redirect.add(host);
-				}
-			}, false);
-
-			radioAllow.addEventListener('command', function () {
-				if (radioAllow.selected) {
-					allow.add(host);
-					redirect.delete(host);
-				}
-			}, false);
-
-			// ick
-			const padding = document.createElementNS(XUL_NS, 'box');
-			padding.setAttribute('width', '5px');
-
-			group.appendChild(padding);
-			group.appendChild(document.createTextNode(host));
-			group.appendChild(radioBlock);
-			group.appendChild(radioRedirect);
-			group.appendChild(radioAllow);
-			panelContent.appendChild(group);
-		}
-
-		empty(panelContent);
-		recentHosts.forEach(addToggle);
-	}
-
-	window.CustomizableUI.createWidget({
-		id: 'safeguard-button',
-		type: 'view',
-		viewId: 'safeguard-manage',
-		tooltiptext: 'Manage HTTP blocking',
-		label: 'Safeguard',
-		onViewShowing: updateActions,
-	});
 }
 
-function removeButton(window) {
-	window.CustomizableUI.destroyWidget('safeguard-button');
+function removeUI(window) {
 	window.document.getElementById('safeguard-manage').remove();
 }
 
 function whenLoaded(window, callback) {
-	window.addEventListener('load', function loaded() {
-		window.removeEventListener('load', loaded, false);
+	window.addEventListener('DOMContentLoaded', function ready() {
+		window.removeEventListener('DOMContentLoaded', ready, false);
 		callback(window);
 	}, false);
 }
@@ -200,10 +134,83 @@ function eachWindow(callback) {
 	}
 }
 
+function updateActions(e) {
+	const document = e.target.ownerDocument;
+	const panelView = document.getElementById('safeguard-manage');
+	const panelContent = panelView.getElementsByClassName('panel-subview-body')[0];
+
+	function addToggle(host) {
+		const group = document.createElementNS(XUL_NS, 'radiogroup');
+		group.setAttribute('orient', 'horizontal');
+
+		const radioBlock = document.createElementNS(XUL_NS, 'radio');
+		radioBlock.setAttribute('label', 'block');
+		radioBlock.value = 'block';
+
+		const radioRedirect = document.createElementNS(XUL_NS, 'radio');
+		radioRedirect.setAttribute('label', 'redirect');
+		radioRedirect.value = 'redirect';
+
+		const radioAllow = document.createElementNS(XUL_NS, 'radio');
+		radioAllow.setAttribute('label', 'allow');
+		radioAllow.value = 'allow';
+
+		if (allow.has(host)) {
+			radioAllow.setAttribute('selected', 'true');
+		} else if (redirect.has(host)) {
+			radioRedirect.setAttribute('selected', 'true');
+		} else {
+			radioBlock.setAttribute('selected', 'true');
+		}
+
+		radioBlock.addEventListener('command', function () {
+			if (radioBlock.selected) {
+				allow.delete(host);
+				redirect.delete(host);
+			}
+		}, false);
+
+		radioRedirect.addEventListener('command', function () {
+			if (radioRedirect.selected) {
+				allow.delete(host);
+				redirect.add(host);
+			}
+		}, false);
+
+		radioAllow.addEventListener('command', function () {
+			if (radioAllow.selected) {
+				allow.add(host);
+				redirect.delete(host);
+			}
+		}, false);
+
+		// ick
+		const padding = document.createElementNS(XUL_NS, 'box');
+		padding.setAttribute('width', '5px');
+
+		group.appendChild(padding);
+		group.appendChild(document.createTextNode(host));
+		group.appendChild(radioBlock);
+		group.appendChild(radioRedirect);
+		group.appendChild(radioAllow);
+		panelContent.appendChild(group);
+	}
+
+	empty(panelContent);
+
+	if (recentHosts.length) {
+		recentHosts.forEach(addToggle);
+	} else {
+		const label = document.createElementNS(XUL_NS, 'label');
+		label.appendChild(document.createTextNode('No recent hosts.'));
+		panelContent.appendChild(label);
+	}
+}
+
 const windowObserver = {
 	observe: function observe(subject, topic) {
 		if (topic === 'domwindowopened') {
-			whenLoaded(subject, addButton);
+			whenLoaded(subject, addUI);
 		}
 	}
 };
@@ -238,17 +245,29 @@ function startup() {
 	Services.obs.addObserver(requestObserver, 'http-on-modify-request', false);
 
 	Services.ww.registerNotification(windowObserver);
-	eachWindow(addButton);
+	eachWindow(addUI);
+
+	CustomizableUI.createWidget({
+		id: 'safeguard-button',
+		type: 'view',
+		viewId: 'safeguard-manage',
+		defaultArea: CustomizableUI.AREA_NAVBAR,
+		tooltiptext: 'Manage HTTP blocking',
+		label: 'Safeguard',
+		onViewShowing: updateActions,
+	});
 }
 
 function shutdown() {
+	CustomizableUI.destroyWidget('safeguard-button');
+
+	Services.ww.unregisterNotification(windowObserver);
+	eachWindow(removeUI);
+
 	Services.obs.removeObserver(requestObserver, 'http-on-modify-request');
 
 	allow.shutdown();
 	redirect.shutdown();
-
-	Services.ww.unregisterNotification(windowObserver);
-	eachWindow(removeButton);
 }
 
 function install() {
