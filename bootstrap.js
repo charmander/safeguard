@@ -10,7 +10,12 @@ function import_(uri) {
 
 const { Services } = import_('resource://gre/modules/Services.jsm');
 const { CustomizableUI } = import_('resource:///modules/CustomizableUI.jsm');
+const stylesheetService =
+	Components.classes['@mozilla.org/content/style-sheet-service;1']
+		.getService(Components.interfaces.nsIStyleSheetService);
 const XUL_NS = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
+
+const stylesheetUri = Services.io.newURI('chrome://safeguard/content/button.css', null, null);
 
 const preferences = Services.prefs.getBranch('extensions.safeguard.');
 const preferencesDefault = Services.prefs.getDefaultBranch('extensions.safeguard.');
@@ -256,9 +261,12 @@ function startup() {
 		label: 'Safeguard',
 		onViewShowing: updateActions,
 	});
+
+	stylesheetService.loadAndRegisterSheet(stylesheetUri, stylesheetService.AUTHOR_SHEET);
 }
 
 function shutdown() {
+	stylesheetService.unregisterSheet(stylesheetUri, stylesheetService.AUTHOR_SHEET);
 	CustomizableUI.destroyWidget('safeguard-button');
 
 	Services.ww.unregisterNotification(windowObserver);
