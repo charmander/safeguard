@@ -2,14 +2,8 @@
 
 'use strict';
 
-function import_(uri) {
-	const scope = {};
-	Components.utils.import(uri, scope);
-	return scope;
-}
-
-const { Services } = import_('resource://gre/modules/Services.jsm');
-const { CustomizableUI } = import_('resource:///modules/CustomizableUI.jsm');
+const { Services } = Components.utils.import('resource://gre/modules/Services.jsm', {});
+const { CustomizableUI } = Components.utils.import('resource:///modules/CustomizableUI.jsm', {});
 const stylesheetService =
 	Components.classes['@mozilla.org/content/style-sheet-service;1']
 		.getService(Components.interfaces.nsIStyleSheetService);
