@@ -3,7 +3,7 @@
 <RDF:RDF xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 	<RDF:Description RDF:about="urn:mozilla:install-manifest">
 		<em:id>safeguard@charmander.me</em:id>
-		<em:version>0.3.4</em:version>
+		<em:version>0.3.5</em:version>
 		<em:type>2</em:type>
 		<em:targetApplication>
 			<RDF:Description>
@@ -12,6 +12,7 @@
 				<em:maxVersion>39.0</em:maxVersion>
 			</RDF:Description>
 		</em:targetApplication>
+		<em:multiprocessCompatible>true</em:multiprocessCompatible>
 		<em:name>Safeguard</em:name>
 		<em:bootstrap>true</em:bootstrap>
 		<em:description>Redirects plain HTTP to HTTPS.</em:description>
