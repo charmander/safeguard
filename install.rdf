@@ -17,6 +17,6 @@
 		<em:bootstrap>true</em:bootstrap>
 		<em:description>Redirects plain HTTP to HTTPS.</em:description>
 		<em:creator>Charmander</em:creator>
-		<em:homepageURL>https://charmander.me/safeguard/</em:homepageURL>
+		<em:homepageURL>https://github.com/charmander/safeguard</em:homepageURL>
 	</RDF:Description>
 </RDF:RDF>
