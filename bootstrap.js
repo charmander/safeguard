@@ -75,7 +75,7 @@ function preferenceSet(name) {
 		},
 		shutdown: function shutdown() {
 			preferences.removeObserver(name, load);
-		}
+		},
 	};
 }
 
@@ -211,7 +211,7 @@ const windowObserver = {
 		if (topic === 'domwindowopened') {
 			whenLoaded(subject, addUI);
 		}
-	}
+	},
 };
 
 const requestObserver = {
@@ -234,7 +234,7 @@ const requestObserver = {
 				addRecentHost(host);
 			}
 		}
-	}
+	},
 };
 
 function startup() {

@@ -12,7 +12,7 @@
 	"unused": true,
 
 	"globals": {
-		"Components": true
+		"Components": false
 	},
 
 	"esnext": true,
