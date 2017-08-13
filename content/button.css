@@ -1,5 +1,0 @@
-@-moz-document url('chrome://browser/content/browser.xul') {
-	#safeguard-button {
-		list-style-image: url('chrome://safeguard/content/icon.svg');
-	}
-}
