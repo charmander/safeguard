@@ -1,0 +1,40 @@
+body {
+	font-family: sans-serif;
+	margin: 0;
+	min-width: 430px;
+}
+
+#recent {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.host {
+	align-items: center;
+	display: flex;
+	padding: 0.6em;
+}
+
+.host:nth-child(odd) {
+	background-color: #f6f6f6;
+}
+
+.hostname {
+	flex: 1;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.actions {
+	margin-left: 0.6em;
+}
+
+.actions input {
+	vertical-align: text-top;
+}
+
+#empty {
+	margin: 0.6em;
+	text-align: center;
+}

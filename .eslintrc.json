@@ -1,0 +1,7 @@
+{
+	"extends": "@charmander/base",
+	"env": {
+		"browser": true,
+		"webextensions": true
+	}
+}

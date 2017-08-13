@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta charset="utf-8" />
+
+		<title>Manage HTTP blocking</title>
+
+		<link rel="stylesheet" href="hosts.css" />
+	</head>
+	<body>
+		<ul id="recent"></ul>
+		<p id="empty" hidden>No recent hosts.</p>
+
+		<template id="host-template">
+			<li class="host">
+				<span class="hostname"></span>
+
+				<span class="actions">
+					<label class="action action-block"><input type="radio" value="block" /> <span class="action-text">block</span></label>
+					<label class="action action-redirect"><input type="radio" value="redirect" /> <span class="action-text">redirect</span></label>
+					<label class="action action-allow"><input type="radio" value="allow" /> <span class="action-text">allow</span></label>
+				</span>
+			</li>
+		</template>
+
+		<script src="hosts.js"></script>
+	</body>
+</html>
