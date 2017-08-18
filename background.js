@@ -3,8 +3,8 @@
 const MAX_RECENT_HOSTS = 20;
 
 const settings = browser.storage.local.get();
-const redirect = settings.then(s => s.redirect || new Set());
-const allow = settings.then(s => s.allow || new Set());
+const redirect = settings.then(s => new Set(s.redirect));
+const allow = settings.then(s => new Set(s.allow));
 const recent = new Set();
 
 const first = collection =>

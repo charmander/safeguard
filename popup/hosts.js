@@ -39,22 +39,22 @@ recentContainer.addEventListener('change', e => {
 	const updates = {};
 
 	if (redirect.delete(hostname)) {
-		updates.redirect = redirect;
+		updates.redirect = Array.from(redirect);
 	}
 
 	if (allow.delete(hostname)) {
-		updates.allow = allow;
+		updates.allow = Array.from(allow);
 	}
 
 	switch (e.target.value) {
 	case 'redirect':
 		redirect.add(hostname);
-		updates.redirect = redirect;
+		updates.redirect = Array.from(redirect);
 		break;
 
 	case 'allow':
 		allow.add(hostname);
-		updates.allow = allow;
+		updates.allow = Array.from(allow);
 		break;
 	}
 
