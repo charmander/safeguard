@@ -3,5 +3,8 @@
 	"env": {
 		"browser": true,
 		"webextensions": true
+	},
+	"rules": {
+		"object-curly-spacing": ["error", "always"]
 	}
 }

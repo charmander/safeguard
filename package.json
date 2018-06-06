@@ -1,5 +1,5 @@
 {
 	"devDependencies": {
-		"@charmander/eslint-config-base": "1.0.1"
+		"@charmander/eslint-config-base": "1.1.0"
 	}
 }
