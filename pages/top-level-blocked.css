@@ -1,0 +1,71 @@
+body {
+	background-color: white;
+	border-radius: 2px;
+	font-family: sans-serif;
+	margin: 2em;
+}
+
+input[type=checkbox] {
+	vertical-align: -0.1em;
+}
+
+#url {
+	background-image: url('blocked.svg');
+	background-repeat: no-repeat;
+	text-indent: 0;
+	padding-inline-start: 1.8em;
+}
+
+#url:dir(rtl) {
+	padding-inline-start: 1.4em;
+}
+
+#url::before {
+	left: 0.4em;
+}
+
+#url:dir(rtl)::before {
+	left: 0;
+}
+
+.controls {
+	line-height: 2;
+	word-spacing: 0.4em;
+}
+
+.control-section {
+	display: inline-block;
+	vertical-align: middle;
+	word-spacing: 0;
+}
+
+.buttons {
+	line-height: 1.6;
+}
+
+.pre-wrap {
+	line-height: 1.4;
+	overflow-wrap: break-word;
+	white-space: pre-wrap;
+	padding-inline-start: 1.4em;
+	position: relative;
+	text-indent: -1.4em;
+}
+
+.pre-wrap::before {
+	background-image: url('wrap.svg');
+	background-size: auto 1.4em;
+	bottom: 0;
+	content: '';
+	left: 0;
+	margin-top: -0.15em;
+	position: absolute;
+	top: 1.4em;
+	width: 1.4em;
+}
+
+.pre-wrap:dir(rtl)::before {
+	background-image: url('wrap-rtl.svg');
+	left: auto;
+	right: 0;
+}

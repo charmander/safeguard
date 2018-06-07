@@ -5,6 +5,7 @@ const MAX_RECENT_HOSTS = 20;
 const settings = browser.storage.local.get();
 const redirect = settings.then(s => new Set(s.redirect));
 const allow = settings.then(s => new Set(s.allow));
+const temporaryAllow = new Set();
 const recent = new Set();
 
 const first = collection =>
@@ -24,13 +25,22 @@ browser.webRequest.onBeforeRequest.addListener(
 		recent.add(hostname);
 
 		if ((await redirect).has(hostname)) {
-			target.protocol = 'https:';
-			return { redirectUrl: target.href };
+			return { upgradeToSecure: true };
 		}
 
-		return {
-			cancel: !(await allow).has(hostname),
-		};
+		if ((await allow).has(hostname) || temporaryAllow.has(request.url)) {
+			temporaryAllow.delete(request.url);
+			return {};
+		}
+
+		if (request.type === 'main_frame' && request.tabId !== -1 && request.method === 'GET') {
+			browser.tabs.update({
+				url: '/pages/top-level-blocked.html?url=' + encodeURIComponent(request.url),
+				loadReplace: true,
+			});
+		}
+
+		return { cancel: true };
 	},
 	{ urls: ['http://*/*'] },
 	['blocking'],
@@ -40,6 +50,7 @@ browser.webRequest.onBeforeRequest.addListener(
 	window.redirect = await redirect;
 	window.allow = await allow;
 	window.recent = recent;
+	window.temporaryAllow = temporaryAllow;
 
 	browser.browserAction.setPopup({
 		popup: 'popup/hosts.html',

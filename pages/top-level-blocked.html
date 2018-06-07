@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+
+		<title>Blocked insecure page</title>
+
+		<link rel="icon" type="image/svg+xml" href="blocked.svg" />
+
+		<link rel="stylesheet" href="top-level-blocked.css" />
+	</head>
+	<body>
+		<pre id="url" class="pre-wrap"></pre>
+
+		<p>Safeguard blocked a non-HTTPS page.</p>
+
+		<div class="controls">
+			<span class="control-section buttons">
+				<button id="allow" type="button" disabled>Allow</button>
+				<button id="redirect" type="button" disabled>Redirect to HTTPS</button>
+			</span>
+
+			<span class="control-section">
+				<label>
+					<input id="save" type="checkbox" checked />
+					Save preferences for <code id="domain"></code>
+				</label>
+			</span>
+		</div>
+
+		<script src="top-level-blocked.js"></script>
+	</body>
+</html>
