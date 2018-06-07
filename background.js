@@ -34,7 +34,7 @@ browser.webRequest.onBeforeRequest.addListener(
 		}
 
 		if (request.type === 'main_frame' && request.tabId !== -1 && request.method === 'GET') {
-			browser.tabs.update({
+			browser.tabs.update(request.tabId, {
 				url: '/pages/top-level-blocked.html?url=' + encodeURIComponent(request.url),
 				loadReplace: true,
 			});
