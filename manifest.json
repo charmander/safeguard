@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "Safeguard",
-	"version": "0.5.1",
+	"version": "0.5.2",
 	"description": "Redirects plain HTTP to HTTPS.",
 	"icons": {
 		"128": "icon.svg"
@@ -18,5 +18,8 @@
 	},
 	"background": {
 		"scripts": ["background.js"]
-	}
+	},
+	"web_accessible_resources": [
+		"pages/redirect-target.html"
+	]
 }
