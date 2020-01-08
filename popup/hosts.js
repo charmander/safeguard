@@ -50,8 +50,8 @@ port.onMessage.addListener(message => {
 	case 'recent': {
 		const { recent } = message;
 
-		for (const entry of recent) {
-			recentContainer.append(createHost(entry));
+		for (const [i, entry] of recent.entries()) {
+			recentContainer.append(createHost(entry, i));
 		}
 
 		emptyMessage.textContent = 'No recent hosts.';
