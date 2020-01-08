@@ -61,7 +61,7 @@ browser.webRequest.onBeforeRequest.addListener(
 				'/pages/redirect-target.html?url=' + encodeURIComponent(request.url) +
 				                           '&hmac=' + encodeHex(hmac);
 
-			return { redirectUrl: browser.extension.getURL(blockRedirectPage) };
+			return { redirectUrl: browser.runtime.getURL(blockRedirectPage) };
 		}
 
 		return { cancel: true };
