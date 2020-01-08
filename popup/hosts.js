@@ -24,7 +24,10 @@ const createHost = (host, i) => {
 	return element;
 };
 
-const { recent, redirect, allow } = browser.extension.getBackgroundPage();
+const port = browser.runtime.connect({
+	name: 'state',
+});
+
 const recentContainer = document.getElementById('recent');
 const emptyMessage = document.getElementById('empty');
 
@@ -36,41 +39,32 @@ recentContainer.addEventListener('change', e => {
 	const hostElement = closest('host', e.target);
 	const hostname = hostElement.dataset.hostname;
 
-	const updates = {};
-
-	if (redirect.delete(hostname)) {
-		updates.redirect = Array.from(redirect);
-	}
-
-	if (allow.delete(hostname)) {
-		updates.allow = Array.from(allow);
-	}
-
-	switch (e.target.value) {
-	case 'redirect':
-		redirect.add(hostname);
-		updates.redirect = Array.from(redirect);
-		break;
-
-	case 'allow':
-		allow.add(hostname);
-		updates.allow = Array.from(allow);
-		break;
-	}
-
-	browser.storage.local.set(updates);
+	port.postMessage({
+		type: e.target.value,
+		hostname,
+	});
 });
 
-Array.from(recent)
-	.reverse()
-	.map(hostname => ({
-		name: hostname,
-		state:
-			redirect.has(hostname) ? 'redirect' :
-			allow.has(hostname) ? 'allow' :
-			'block',
-	}))
-	.map(createHost)
-	.forEach(Element.prototype.appendChild, recentContainer);
+port.onMessage.addListener(message => {
+	switch (message.type) {
+	case 'recent': {
+		const { recent } = message;
 
-emptyMessage.hidden = recent.size !== 0;
+		for (const entry of recent) {
+			recentContainer.append(createHost(entry));
+		}
+
+		emptyMessage.textContent = 'No recent hosts.';
+		emptyMessage.hidden = recent.length !== 0;
+
+		break;
+	}
+
+	default:
+		throw new Error(`Unexpected message type ${message.type}`);
+	}
+});
+
+port.postMessage({
+	type: 'recent',
+});

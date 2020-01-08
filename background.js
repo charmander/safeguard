@@ -70,32 +70,128 @@ browser.webRequest.onBeforeRequest.addListener(
 	['blocking'],
 );
 
-browser.runtime.onConnect.addListener(port => {
-	port.onMessage.addListener(async message => {
-		port.disconnect();
+const onRedirectTargetMessage = async (message, port) => {
+	port.disconnect();
 
-		const urlBytes = new TextEncoder('utf-8').encode(message.url);
-		const hmac = decodeHex(message.hmac);
-		const valid = await crypto.subtle.verify('HMAC', await signingKey, hmac, urlBytes);
+	const urlBytes = new TextEncoder('utf-8').encode(message.url);
+	const hmac = decodeHex(message.hmac);
+	const valid = await crypto.subtle.verify('HMAC', await signingKey, hmac, urlBytes);
 
-		if (valid) {
-			const blockPage = '/pages/top-level-blocked.html?url=' + encodeURIComponent(message.url);
+	if (valid) {
+		const blockPage = '/pages/top-level-blocked.html?url=' + encodeURIComponent(message.url);
 
-			browser.tabs.update(port.sender.tab.id, {
-				url: blockPage,
-				loadReplace: true,
+		browser.tabs.update(port.sender.tab.id, {
+			url: blockPage,
+			loadReplace: true,
+		});
+	}
+};
+
+const onStateMessage = async (message, port) => {
+	switch (message.type) {
+	case 'recent': {
+		const redirectS = await redirect;
+		const allowS = await allow;
+
+		port.postMessage({
+			type: 'recent',
+			recent: Array.from(recent)
+				.reverse()
+				.map(hostname => ({
+					name: hostname,
+					state:
+						redirectS.has(hostname) ? 'redirect' :
+						allowS.has(hostname) ? 'allow' :
+						'block',
+				})),
+		});
+		break;
+	}
+
+	case 'check': {
+		const { hostname } = message;
+
+		if ((await redirect).has(hostname) || (await allow).has(hostname)) {
+			port.postMessage({
+				type: 'exists',
 			});
+			port.disconnect();
 		}
-	});
+
+		break;
+	}
+
+	case 'allow': {
+		const { hostname } = message;
+		const updates = {};
+
+		if ((await redirect).delete(hostname)) {
+			updates.redirect = Array.from(await redirect);
+		}
+
+		(await allow).add(hostname);
+		updates.allow = Array.from(await allow);
+
+		browser.storage.local.set(updates);
+
+		break;
+	}
+
+	case 'allow-temporary':
+		temporaryAllow.add(message.url);
+		break;
+
+	case 'redirect': {
+		const { hostname } = message;
+		const updates = {};
+
+		if ((await allow).delete(hostname)) {
+			updates.allow = Array.from(await allow);
+		}
+
+		(await redirect).add(hostname);
+		updates.redirect = Array.from(await redirect);
+
+		browser.storage.local.set(updates);
+
+		break;
+	}
+
+	case 'block': {
+		const { hostname } = message;
+		const updates = {};
+
+		if ((await allow).delete(hostname)) {
+			updates.allow = Array.from(await allow);
+		} else if ((await redirect).delete(hostname)) {
+			updates.redirect = Array.from(await redirect);
+		}
+
+		browser.storage.local.set(updates);
+
+		break;
+	}
+
+	default:
+		throw new Error(`Unexpected message type ${message.type}`);
+	}
+};
+
+browser.runtime.onConnect.addListener(port => {
+	switch (port.name) {
+	case 'redirect-target':
+		port.onMessage.addListener(onRedirectTargetMessage);
+		break;
+
+	case 'state':
+		port.onMessage.addListener(onStateMessage);
+		break;
+
+	default:
+		throw new Error(`Unexpected connection ${port.name}`);
+	}
 });
 
-(async () => {
-	window.redirect = await redirect;
-	window.allow = await allow;
-	window.recent = recent;
-	window.temporaryAllow = temporaryAllow;
-
-	browser.browserAction.setPopup({
-		popup: 'popup/hosts.html',
-	});
-})();
+browser.browserAction.setPopup({
+	popup: 'popup/hosts.html',
+});

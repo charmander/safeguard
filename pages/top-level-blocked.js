@@ -14,12 +14,26 @@
 	const url = new URLSearchParams(window.location.search).get('url');
 	const hostname = new URL(url).hostname;
 
-	const { redirect, allow, temporaryAllow } = browser.extension.getBackgroundPage();
+	const port = browser.runtime.connect({
+		name: 'state',
+	});
 
-	if (redirect.has(hostname) || allow.has(hostname)) {
-		locationReplace(url);
-		return;
-	}
+	port.postMessage({
+		type: 'check',
+		hostname,
+	});
+
+	port.onMessage.addListener(message => {
+		switch (message.type) {
+		case 'exists':
+			port.disconnect();
+			locationReplace(url);
+			break;
+
+		default:
+			throw new Error(`Unexpected message type ${message.type}`);
+		}
+	});
 
 	document.getElementById('url').textContent = url;
 	document.getElementById('domain').textContent = hostname;
@@ -30,18 +44,15 @@
 
 	allowButton.addEventListener('click', () => {
 		if (save.checked) {
-			const updates = {};
-
-			if (redirect.delete(hostname)) {
-				updates.redirect = Array.from(redirect);
-			}
-
-			allow.add(hostname);
-			updates.allow = Array.from(allow);
-
-			browser.storage.local.set(updates);
+			port.postMessage({
+				type: 'allow',
+				hostname,
+			});
 		} else {
-			temporaryAllow.add(url);
+			port.postMessage({
+				type: 'allow-temporary',
+				url,
+			});
 		}
 
 		locationReplace(url);
@@ -49,16 +60,10 @@
 
 	redirectButton.addEventListener('click', () => {
 		if (save.checked) {
-			const updates = {};
-
-			if (allow.delete(hostname)) {
-				updates.allow = Array.from(allow);
-			}
-
-			redirect.add(hostname);
-			updates.redirect = Array.from(redirect);
-
-			browser.storage.local.set(updates);
+			port.postMessage({
+				type: 'redirect',
+				hostname,
+			});
 		}
 
 		const httpsUrl = new URL(url);
