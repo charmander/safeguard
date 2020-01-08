@@ -149,6 +149,10 @@ const onStateMessage = async (message, port) => {
 		});
 		break;
 
+	case 'clear-recent':
+		recent.clear();
+		break;
+
 	case 'check': {
 		const { hostname } = message;
 

@@ -30,6 +30,8 @@ const port = browser.runtime.connect({
 
 const recentContainer = document.getElementById('recent');
 const emptyMessage = document.getElementById('empty');
+const prefsLink = document.getElementById('prefs');
+const clearButton = document.getElementById('clear');
 
 recentContainer.addEventListener('change', e => {
 	if (!e.target.checked) {
@@ -45,6 +47,20 @@ recentContainer.addEventListener('change', e => {
 	});
 });
 
+prefsLink.addEventListener('click', () => {
+	browser.runtime.openOptionsPage();
+});
+
+clearButton.addEventListener('click', () => {
+	port.postMessage({
+		type: 'clear-recent',
+	});
+
+	recentContainer.textContent = '';
+	emptyMessage.hidden = false;
+	clearButton.disabled = true;
+});
+
 port.onMessage.addListener(message => {
 	switch (message.type) {
 	case 'recent': {
@@ -56,6 +72,7 @@ port.onMessage.addListener(message => {
 
 		emptyMessage.textContent = 'No recent hosts.';
 		emptyMessage.hidden = recent.length !== 0;
+		clearButton.disabled = recent.length === 0;
 
 		break;
 	}

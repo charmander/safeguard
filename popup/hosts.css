@@ -32,3 +32,18 @@ body {
 	margin: 0.6em;
 	text-align: center;
 }
+
+#actions {
+	display: flex;
+	margin: 0.5em 0;
+}
+
+#actions > * {
+	flex-grow: 1;
+	margin: 0 0.5em;
+	text-align: center;
+}
+
+#actions > * + * {
+	margin-left: 0;
+}
