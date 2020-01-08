@@ -46,7 +46,7 @@
 		if (save.checked) {
 			port.postMessage({
 				type: 'allow',
-				hostname,
+				hostnames: [hostname],
 			});
 		} else {
 			port.postMessage({
@@ -62,7 +62,7 @@
 		if (save.checked) {
 			port.postMessage({
 				type: 'redirect',
-				hostname,
+				hostnames: [hostname],
 			});
 		}
 

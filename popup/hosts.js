@@ -41,7 +41,7 @@ recentContainer.addEventListener('change', e => {
 
 	port.postMessage({
 		type: e.target.value,
-		hostname,
+		hostnames: [hostname],
 	});
 });
 
@@ -59,6 +59,12 @@ port.onMessage.addListener(message => {
 
 		break;
 	}
+
+	/*case 'allow':
+	case 'redirect':
+	case 'block':
+		// TODO: implement this, but with storage change event after storage refactoring
+		break;*/
 
 	default:
 		throw new Error(`Unexpected message type ${message.type}`);

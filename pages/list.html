@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta charset="utf-8" />
+
+		<title>Safeguard options</title>
+
+		<link rel="stylesheet" href="list.css" />
+	</head>
+	<body>
+		<!--<h3><label for="manage">Manage domain</label></h3>
+
+		<form action="javascript:;">
+			<input id="manage" type="search" placeholder="example.com" />
+
+			<div class="actions">
+				<button type="button" disabled>Add to redirected</button>
+				<button type="button" disabled>Add to allowed</button>
+				<button type="button" disabled>Remove</button>
+			</div>
+		</form>-->
+
+		<h3><label for="allow">Allowed insecure domains</label></h3>
+
+		<select class="list" id="allow" multiple size="10"></select>
+
+		<div class="actions">
+			<button class="browser-style" id="allow-remove" type="button" disabled>Remove selected</button>
+			<button class="browser-style" id="allow-move" type="button" disabled>Move to redirected</button>
+		</div>
+
+		<h3><label for="redirect">Redirected domains</label></h3>
+
+		<select class="list" id="redirect" multiple size="10"></select>
+
+		<div class="actions">
+			<button class="browser-style" id="redirect-remove" type="button" disabled>Remove selected</button>
+			<button class="browser-style" id="redirect-move" type="button" disabled>Move to allowed</button>
+		</div>
+
+		<script type="module" src="list.js"></script>
+	</body>
+</html>

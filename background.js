@@ -2,9 +2,13 @@
 
 const MAX_RECENT_HOSTS = 20;
 
-const settings = browser.storage.local.get();
-const redirect = settings.then(s => new Set(s.redirect));
-const allow = settings.then(s => new Set(s.allow));
+let redirect;
+let allow;
+const ready = browser.storage.local.get().then(s => {
+	redirect = new Set(s.redirect);
+	allow = new Set(s.allow);
+});
+
 const temporaryAllow = new Set();
 const recent = new Set();
 
@@ -45,11 +49,13 @@ browser.webRequest.onBeforeRequest.addListener(
 
 		recent.add(hostname);
 
-		if ((await redirect).has(hostname)) {
+		await ready;
+
+		if (redirect.has(hostname)) {
 			return { upgradeToSecure: true };
 		}
 
-		if ((await allow).has(hostname) || temporaryAllow.has(request.url)) {
+		if (allow.has(hostname) || temporaryAllow.has(request.url)) {
 			temporaryAllow.delete(request.url);
 			return {};
 		}
@@ -87,12 +93,48 @@ const onRedirectTargetMessage = async (message, port) => {
 	}
 };
 
-const onStateMessage = async (message, port) => {
-	switch (message.type) {
-	case 'recent': {
-		const redirectS = await redirect;
-		const allowS = await allow;
+const updateStorage = ({ updateAllow, updateRedirect }) => {
+	const updates = {};
 
+	if (updateAllow) {
+		updates.allow = Array.from(allow);
+	}
+
+	if (updateRedirect) {
+		updates.redirect = Array.from(redirect);
+	}
+
+	return browser.storage.local.set(updates);
+};
+
+const stateListeners = new Set();
+
+const postStateMessage = message => {
+	for (const listener of stateListeners) {
+		listener.postMessage(message);
+	}
+};
+
+const onStateDisconnect = port => {
+	stateListeners.delete(port);
+};
+
+const onStateMessage = async (message, port) => {
+	await ready;
+
+	switch (message.type) {
+	case 'state': {
+		port.postMessage({
+			type: 'state',
+			redirect: Array.from(redirect),
+			allow: Array.from(allow),
+		});
+		stateListeners.add(port);
+		port.onDisconnect.addListener(onStateDisconnect);
+		break;
+	}
+
+	case 'recent':
 		port.postMessage({
 			type: 'recent',
 			recent: Array.from(recent)
@@ -100,18 +142,17 @@ const onStateMessage = async (message, port) => {
 				.map(hostname => ({
 					name: hostname,
 					state:
-						redirectS.has(hostname) ? 'redirect' :
-						allowS.has(hostname) ? 'allow' :
+						redirect.has(hostname) ? 'redirect' :
+						allow.has(hostname) ? 'allow' :
 						'block',
 				})),
 		});
 		break;
-	}
 
 	case 'check': {
 		const { hostname } = message;
 
-		if ((await redirect).has(hostname) || (await allow).has(hostname)) {
+		if (redirect.has(hostname) || allow.has(hostname)) {
 			port.postMessage({
 				type: 'exists',
 			});
@@ -122,17 +163,20 @@ const onStateMessage = async (message, port) => {
 	}
 
 	case 'allow': {
-		const { hostname } = message;
-		const updates = {};
+		const { hostnames } = message;
+		let updateRedirect = false;
 
-		if ((await redirect).delete(hostname)) {
-			updates.redirect = Array.from(await redirect);
+		for (const hostname of hostnames) {
+			updateRedirect |= redirect.delete(hostname);
+			allow.add(hostname);
 		}
 
-		(await allow).add(hostname);
-		updates.allow = Array.from(await allow);
+		updateStorage({
+			updateAllow: true,
+			updateRedirect,
+		});
 
-		browser.storage.local.set(updates);
+		postStateMessage(message);
 
 		break;
 	}
@@ -142,32 +186,40 @@ const onStateMessage = async (message, port) => {
 		break;
 
 	case 'redirect': {
-		const { hostname } = message;
-		const updates = {};
+		const { hostnames } = message;
+		let updateAllow = false;
 
-		if ((await allow).delete(hostname)) {
-			updates.allow = Array.from(await allow);
+		for (const hostname of hostnames) {
+			updateAllow |= allow.delete(hostname);
+			redirect.add(hostname);
 		}
 
-		(await redirect).add(hostname);
-		updates.redirect = Array.from(await redirect);
+		updateStorage({
+			updateAllow,
+			updateRedirect: true,
+		});
 
-		browser.storage.local.set(updates);
+		postStateMessage(message);
 
 		break;
 	}
 
 	case 'block': {
-		const { hostname } = message;
-		const updates = {};
+		const { hostnames } = message;
+		let updateAllow = false;
+		let updateRedirect = false;
 
-		if ((await allow).delete(hostname)) {
-			updates.allow = Array.from(await allow);
-		} else if ((await redirect).delete(hostname)) {
-			updates.redirect = Array.from(await redirect);
+		for (const hostname of hostnames) {
+			updateAllow |= allow.delete(hostname);
+			updateRedirect |= redirect.delete(hostname);
 		}
 
-		browser.storage.local.set(updates);
+		updateStorage({
+			updateAllow,
+			updateRedirect,
+		});
+
+		postStateMessage(message);
 
 		break;
 	}

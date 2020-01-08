@@ -28,5 +28,9 @@
 	"web_accessible_resources": [
 		"pages/redirect-target.html"
 	],
+	"options_ui": {
+		"browser_style": true,
+		"page": "pages/list.html"
+	},
 	"incognito": "spanning"
 }
