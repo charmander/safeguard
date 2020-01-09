@@ -17,11 +17,6 @@ const getDomainSort = domain => {
 	return components.reverse();
 };
 
-// the context menu in this area of the page isn’t useful and could mislead users into thinking “Remove” means “remove this domain entry” and not “remove the add-on”
-document.addEventListener('contextmenu', e => {
-	e.preventDefault();
-});
-
 const associateSelectionActions = (list, buttons) => {
 	const updateDisabled = () => {
 		const disabled = list.selectedOptions.length === 0;
