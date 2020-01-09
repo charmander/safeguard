@@ -158,7 +158,7 @@ port.onMessage.addListener(message => {
 		}
 
 		if (redirectChanged) {
-			allowList.dispatchEvent(new Event('change'));
+			redirectList.dispatchEvent(new Event('change'));
 		}
 
 		break;
