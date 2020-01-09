@@ -1,5 +1,3 @@
-'use strict';
-
 const hostTemplate = document.getElementById('host-template').content.firstElementChild;
 
 const closest = (className, node) => {

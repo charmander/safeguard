@@ -1,5 +1,3 @@
-'use strict';
-
 const params = new URLSearchParams(window.location.search);
 
 const port = browser.runtime.connect({

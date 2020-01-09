@@ -1,4 +1,5 @@
-'use strict';
+import decodeHex from './util/decode-hex.js';
+import encodeHex from './util/encode-hex.js';
 
 const MAX_RECENT_HOSTS = 20;
 
@@ -12,29 +13,11 @@ const ready = browser.storage.local.get().then(s => {
 const temporaryAllow = new Set();
 const recent = new Set();
 
-const first = collection =>
-	collection.values().next().value;
-
 const signingKey = crypto.subtle.generateKey(
 	{ name: 'HMAC', hash: 'SHA-256' },
 	false,
 	['sign', 'verify']
 );
-
-const encodeByteHex = byte => byte.toString(16).padStart(2, '0');
-
-const encodeHex = arrayBuffer =>
-	Array.prototype.map.call(new Uint8Array(arrayBuffer), encodeByteHex).join('');
-
-const decodeHex = hex => {
-	const bytes = new Uint8Array(hex.length >>> 1);
-
-	for (let i = 0; i < bytes.length; i++) {
-		bytes[i] = parseInt(hex.substr(2 * i, 2), 16);
-	}
-
-	return bytes;
-};
 
 browser.webRequest.onBeforeRequest.addListener(
 	async request => {
@@ -44,7 +27,8 @@ browser.webRequest.onBeforeRequest.addListener(
 		recent.delete(hostname);
 
 		if (recent.size === MAX_RECENT_HOSTS) {
-			recent.delete(first(recent));
+			const [first] = recent;
+			recent.delete(first);
 		}
 
 		recent.add(hostname);

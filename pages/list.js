@@ -1,5 +1,5 @@
-import binarySearch from './binary-search.js';
-import compareSequences from './compare-sequences.js';
+import binarySearch from '../util/binary-search.js';
+import compareSequences from '../util/compare-sequences.js';
 
 // Sort siblings next to each other, but don’t separate a (TODO: effective) TLD from the component before.
 // https://bugzilla.mozilla.org/show_bug.cgi?id=1315558
@@ -81,7 +81,7 @@ const validateManageInput = () => {
 	const inputDomain = manageInput.value.trim();
 	normalizedDomain = null;
 
-	if (inputDomain !== '' && !/[#?\/\\]/.test(inputDomain)) {
+	if (inputDomain !== '' && !/[#?/\\]/.test(inputDomain)) {
 		try {
 			const url = new URL(`http://${inputDomain}:80/`);
 			normalizedDomain = url.hostname;
