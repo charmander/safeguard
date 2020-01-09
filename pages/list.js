@@ -38,6 +38,12 @@ const redirectList = document.getElementById('redirect');
 const redirectRemove = document.getElementById('redirect-remove');
 const redirectMove = document.getElementById('redirect-move');
 
+const manageInput = document.getElementById('manage');
+const manageNormalized = document.getElementById('manage-normalized');
+const manageRedirect = document.getElementById('manage-redirect');
+const manageAllow = document.getElementById('manage-allow');
+const manageBlock = document.getElementById('manage-block');
+
 associateSelectionActions(allowList, [allowRemove, allowMove]);
 associateSelectionActions(redirectList, [redirectRemove, redirectMove]);
 
@@ -67,6 +73,72 @@ redirectMove.addEventListener('click', () => {
 		type: 'allow',
 		hostnames: Array.from(redirectList.selectedOptions, option => option.text),
 	});
+});
+
+let normalizedDomain;
+
+const validateManageInput = () => {
+	const inputDomain = manageInput.value.trim();
+	normalizedDomain = null;
+
+	if (inputDomain !== '' && !/[#?\/\\]/.test(inputDomain)) {
+		try {
+			const url = new URL(`http://${inputDomain}:80/`);
+			normalizedDomain = url.hostname;
+		} catch (err) {}
+	}
+
+	if (normalizedDomain === null) {
+		manageInput.setCustomValidity('not a domain');
+		manageNormalized.value = '';
+
+		manageRedirect.disabled = true;
+		manageAllow.disabled = true;
+		manageBlock.disabled = true;
+	} else {
+		manageInput.setCustomValidity('');
+		manageNormalized.value = '(' + normalizedDomain + ')';
+
+		const option = domainOptions.get(normalizedDomain);
+		const parent = option && option.parentNode;
+
+		manageRedirect.disabled = parent === redirectList;
+		manageAllow.disabled = parent === allowList;
+		manageBlock.disabled = parent === undefined;
+	}
+};
+
+manageInput.addEventListener('input', validateManageInput);
+validateManageInput();
+
+manageRedirect.addEventListener('click', () => {
+	port.postMessage({
+		type: 'redirect',
+		hostnames: [normalizedDomain],
+	});
+
+	manageInput.value = '';
+	validateManageInput();
+});
+
+manageAllow.addEventListener('click', () => {
+	port.postMessage({
+		type: 'allow',
+		hostnames: [normalizedDomain],
+	});
+
+	manageInput.value = '';
+	validateManageInput();
+});
+
+manageBlock.addEventListener('click', () => {
+	port.postMessage({
+		type: 'block',
+		hostnames: [normalizedDomain],
+	});
+
+	manageInput.value = '';
+	validateManageInput();
 });
 
 const optionSorts = new WeakMap();
@@ -160,6 +232,8 @@ port.onMessage.addListener(message => {
 		if (redirectChanged) {
 			redirectList.dispatchEvent(new Event('change'));
 		}
+
+		validateManageInput();
 
 		break;
 	}

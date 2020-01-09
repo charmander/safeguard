@@ -9,17 +9,19 @@
 		<link rel="stylesheet" href="list.css" />
 	</head>
 	<body>
-		<!--<h3><label for="manage">Manage domain</label></h3>
+		<h3><label for="manage">Manage domain</label></h3>
 
 		<form action="javascript:;">
-			<input id="manage" type="search" placeholder="example.com" />
+			<input id="manage" type="text" placeholder="example.com" inputmode="url" />
+
+			<output id="manage-normalized" for="manage"></output>
 
 			<div class="actions">
-				<button type="button" disabled>Add to redirected</button>
-				<button type="button" disabled>Add to allowed</button>
-				<button type="button" disabled>Remove</button>
+				<button class="browser-style" id="manage-redirect" type="button" disabled>Add to redirected</button>
+				<button class="browser-style" id="manage-allow" type="button" disabled>Add to allowed</button>
+				<button class="browser-style" id="manage-block" type="button" disabled>Remove</button>
 			</div>
-		</form>-->
+		</form>
 
 		<h3><label for="allow">Allowed insecure domains</label></h3>
 
